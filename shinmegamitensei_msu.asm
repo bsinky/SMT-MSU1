@@ -1,5 +1,8 @@
 ; Shin Megami Tensei MSU1 ASM
 
+;; ======================================
+;; Defines
+;; ======================================
 !True			= 1
 !False			= 0
 !MSU_STATUS		= $2000
@@ -16,7 +19,23 @@
 
 !TrackIndexOffset = #$44
 
+;; =====================================
+;; Macros
+;; =====================================
+
+; Sets A, X, and Y to 8-bit mode
+macro Set8BitMode()
+	SEP #$30
+endmacro
+
+; Sets A, X, and Y to 16-bit mode
+macro Set16BitMode()
+	REP #$30
+endmacro
+
+;; =====================================
 ;; Main MSU-1 hook
+;; =====================================
 org !OriginalMusicSubroutineStart
 ;; overwriting 5 bytes here: 38 e9 44 0a aa = SEC SBC #$44 ASL TAX
 ;; 3 bytes php sep #$30
@@ -26,6 +45,7 @@ freecode
 
 CheckForMSU:
 	PHP
+	%Set8BitMode()
 	TAX
 	lda !MSU_ID
 	cmp #$53	; 'S'
@@ -45,27 +65,41 @@ CheckForMSU:
 	lda !MSU_ID+5
 	cmp #$31	; '1'
 	bne .NoMSU
+	TXA			; Grab the original passed in A value again
+	CPX #$FF ; original code passes #$FF to stop the current track
+	BCS .StopMSUTrack
+	TXA			; Grab the original passed in A value again
+	SEC
+	SBC !TrackIndexOffset
+	BCC .NoMSU ; Fallback to original music if A minus TrackIndexOffset <= 0
+	TAY ; Save calculated index to Y
 	
 .MSUFound:
-	; Do something with this fact here.
 	lda #$FF
 	sta !MSU_VOLUME
-	ldx #$0001	; Writing a 16-bit value will automatically
-	stx !MSU_TRACK	; set $2005 as well, so this is easy.
+	TYX ; move the calculated index value from Y back to X
+	stx !MSU_TRACK
+	stz !MSU_TRACK+1
 	lda #$01	; Set audio state to play, no repeat.
 	sta !MSU_CONTROL
 	; The MSU1 will now start playing.
 	; Use lda #$03 to play a song repeatedly.
+	; TODO: not sure how to determine whether the requested track should loop or not
 	PLP
 	JML !OriginalMusicSubroutineReturn
+
+.StopMSUTrack:
+	lda #$00
+	sta !MSU_CONTROL
+	PLP
+	JML !OriginalMusicSubroutineReturn
+	
+; TODO: sound effects are broken, so the fallback to regular sound must not be entirely working
 .NoMSU:
-	; copied original routine here
+	PLP
 	; restore value of A
 	TXA
-	PLP
 	; run original overwritten code and return to subroutine
 	php
-	sep #$30
 	ldy $0f83
 	JML !OriginalMusicSubroutineAfterHook
-	
