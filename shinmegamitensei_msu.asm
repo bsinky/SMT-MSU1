@@ -17,7 +17,7 @@
 !OriginalMusicSubroutineAfterHook = $00c807d
 !OriginalMusicSubroutineReturn = $000c80a6
 
-!TrackIndexOffset = #$44
+!TrackIndexOffset = #$3C
 
 ;; =====================================
 ;; Macros
