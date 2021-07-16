@@ -33,6 +33,20 @@ macro Set16BitMode()
 	REP #$30
 endmacro
 
+macro PushState()
+	PHP
+	PHX
+	PHY
+	PHA
+endmacro
+
+macro PullState()
+	PLA
+	PLY
+	PLX
+	PLP
+endmacro
+
 ;; =====================================
 ;; Main MSU-1 hook
 ;; =====================================
@@ -44,7 +58,8 @@ autoclean JML CheckForMSU
 freecode
 
 CheckForMSU:
-	PHP
+	%Set16BitMode()
+	%PushState()
 	%Set8BitMode()
 	TAX
 	lda !MSU_ID
@@ -85,20 +100,21 @@ CheckForMSU:
 	; The MSU1 will now start playing.
 	; Use lda #$03 to play a song repeatedly.
 	; TODO: not sure how to determine whether the requested track should loop or not
-	PLP
+	%Set16BitMode()
+	%PullState()
 	JML !OriginalMusicSubroutineReturn
 
 .StopMSUTrack:
 	lda #$00
 	sta !MSU_CONTROL
-	PLP
+	%Set16BitMode()
+	%PullState()
 	JML !OriginalMusicSubroutineReturn
 	
 ; TODO: sound effects are broken, so the fallback to regular sound must not be entirely working
 .NoMSU:
-	PLP
-	; restore value of A
-	TXA
+	%Set16BitMode()
+	%PullState()
 	; run original overwritten code and return to subroutine
 	php
 	ldy $0f83
