@@ -52,53 +52,47 @@ macro PullState()
 	PLP
 endmacro
 
+macro JumpIfMSU(labelToJump)
+	LDA $2002
+	CMP #$53
+	BEQ <labelToJump>
+endmacro
+
+macro JumpIfNoMSU(labelToJump)
+	LDA $2002
+	CMP #$53
+	BNE <labelToJump>
+endmacro
+
 ;; =====================================
 ;; Main MSU-1 hook
 ;; =====================================
 org !OriginalMusicSubroutineStart
 ;; overwriting 3 bytes php sep #$30
-autoclean JML CheckForMSU
+autoclean JML MSUHook
 
 freecode
 
-CheckForMSU:
+MSUHook:
 	%Set16BitMode()
 	%PushState()
 	%Set8BitMode()
 	TAX
-	; TODO: only check for MSU-1 once, then cache a value we can more quickly check later
-	lda !MSU_ID
-	cmp #$53	; 'S'
-	bne .NoMSU	; Stop checking if it's wrong
-	lda !MSU_ID+1
-	cmp #$2D	; '-'
-	bne .NoMSU
-	lda !MSU_ID+2
-	cmp #$4D	; 'M'
-	bne .NoMSU
-	lda !MSU_ID+3
-	cmp #$53	; 'S'
-	bne .NoMSU
-	lda !MSU_ID+4
-	cmp #$55	; 'U'
-	bne .NoMSU
-	lda !MSU_ID+5
-	cmp #$31	; '1'
-	bne .NoMSU
+	%JumpIfNoMSU(.NoMSU) ; MSU not available, fallback
+	; Else, MSU was found, continue on
+	
+.MSUFound:
 	TXA			; Grab the original passed in A value again
 	CPX #$FF ; original code passes #$FF to stop the current track
 	BCS .StopMSUTrack
 	TXA			; Grab the original passed in A value again
 	SEC
 	SBC !TrackIndexOffset
-	BCC .NoMSU ; Fallback to original music if A minus TrackIndexOffset <= 0
+	BCC .NoMSU ; Fallback to original music if A minus TrackIndexOffset <= 0 (sound effects use this)
 	TAY ; Save calculated index to Y
-	
-.MSUFound:
 	lda #$FF
 	sta !MSU_VOLUME
-	TYX ; move the calculated index value from Y back to X
-	stx !MSU_TRACK
+	sty !MSU_TRACK ; store calculated track index
 	stz !MSU_TRACK+1
 	lda #$01	; Set audio state to play, no repeat.
 	sta !MSU_CONTROL
@@ -115,8 +109,7 @@ CheckForMSU:
 	%Set16BitMode()
 	%PullState()
 	JML !OriginalMusicSubroutineReturn
-	
-; TODO: sound effects are broken, so the fallback to regular sound must not be entirely working
+
 .NoMSU:
 	%Set16BitMode()
 	%PullState()
