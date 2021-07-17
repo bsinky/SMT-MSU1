@@ -51,8 +51,7 @@ endmacro
 ;; Main MSU-1 hook
 ;; =====================================
 org !OriginalMusicSubroutineStart
-;; overwriting 5 bytes here: 38 e9 44 0a aa = SEC SBC #$44 ASL TAX
-;; 3 bytes php sep #$30
+;; overwriting 3 bytes php sep #$30
 autoclean JML CheckForMSU
 
 freecode
@@ -62,6 +61,7 @@ CheckForMSU:
 	%PushState()
 	%Set8BitMode()
 	TAX
+	; TODO: only check for MSU-1 once, then cache a value we can more quickly check later
 	lda !MSU_ID
 	cmp #$53	; 'S'
 	bne .NoMSU	; Stop checking if it's wrong
@@ -117,5 +117,7 @@ CheckForMSU:
 	%PullState()
 	; run original overwritten code and return to subroutine
 	php
+	%Set8BitMode()
 	ldy $0f83
+	sta $0f84, Y
 	JML !OriginalMusicSubroutineAfterHook
