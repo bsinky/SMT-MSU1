@@ -18,9 +18,11 @@ lorom
 !MSU_VOLUME		= $2006
 !MSU_CONTROL	= $2007
 
-!OriginalMusicSubroutineStart = $000c807a
-!OriginalMusicSubroutineAfterHook = $00c8083
-!OriginalMusicSubroutineReturn = $000c80a6
+!OriginalMusicSubroutineStart = $000c80a7
+!OriginalMusicSubroutineAfterHook = $00c80b7
+!OriginalMusicSubroutineReturn = $000c809a
+
+!SomeMusicTrackRelatedMemoryAddress = $000f83 ; Not sure what this is used for exactly
 
 !TrackIndexOffset = #$3C
 
@@ -86,7 +88,6 @@ endmacro
 ;; Main MSU-1 hook
 ;; =====================================
 org !OriginalMusicSubroutineStart
-;; overwriting 3 bytes php sep #$30
 autoclean JML MSUHook
 
 freecode
@@ -99,13 +100,14 @@ MSUHook:
 	; Else, MSU was found, continue on
 	
 .MSUFound:
-	TXA			; Grab the original passed in A value again
-	CPX #$FF ; original code passes #$FF to stop the current track
-	BCS .StopMSUTrack
+	;TXA			; Grab the original passed in A value again
+	; TODO: not sure how to handle music stop when hooking at this alternate location
+	;CPX #$FF ; original code passes #$FF to stop the current track
+	;BCS .StopMSUTrack
 	TXA			; Grab the original passed in A value again
 	SEC
 	SBC !TrackIndexOffset
-	BCC .NoMSU ; Fallback to original music if A minus TrackIndexOffset <= 0 (sound effects use this)
+	;BCC .NoMSU ; Fallback to original music if A minus TrackIndexOffset <= 0 (sound effects use this)
 	TAY ; Save calculated index to Y
 	lda #$FF
 	sta !MSU_VOLUME
@@ -117,6 +119,8 @@ MSUHook:
 	; Use lda #$03 to play a song repeatedly.
 	; TODO: not sure how to determine whether the requested track should loop or not. Loops always?
 	%PullState()
+	; TODO: not sure what the value of Y should be...
+	ldy #$00
 	JML !OriginalMusicSubroutineReturn
 
 .StopMSUTrack:
@@ -128,7 +132,11 @@ MSUHook:
 .NoMSU:
 	%PullState()
 	; run original overwritten code and return to subroutine
-	php
-	ldy $0f83
-	sta $0f84, Y
+	sec
+	sbc #$44
+	asl
+	tax
+	lda $0c814c, X
+	sta $0090
+	lda $0c814d, X
 	JML !OriginalMusicSubroutineAfterHook
