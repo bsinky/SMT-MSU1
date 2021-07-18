@@ -87,6 +87,12 @@ endmacro
 ;; =====================================
 ;; Main MSU-1 hook
 ;; =====================================
+
+;org $00c8086
+;cmp !TrackIndexOffset ; TODO: hopefully changing this index is okay... ; Update: it was not very okay
+; TODO: enemy encounter, battle, and resuming map music after battle appear to work diffrently somehow
+; TODO: debug how those work in the original ROM some more.
+
 org !OriginalMusicSubroutineStart
 autoclean JML MSUHook
 
