@@ -19,7 +19,7 @@ lorom
 !MSU_CONTROL	= $2007
 
 !OriginalMusicSubroutineStart = $000c807a
-!OriginalMusicSubroutineAfterHook = $00c807d
+!OriginalMusicSubroutineAfterHook = $00c8083
 !OriginalMusicSubroutineReturn = $000c80a6
 
 !TrackIndexOffset = #$3C
@@ -47,30 +47,27 @@ macro Set16BitA()
 endmacro
 
 macro Set8BitXY()
-	SEP #$40
+	SEP #$10
 endmacro
 
 macro Set16BitXY()
-	REP #$40
+	REP #$10
 endmacro
 
 macro PushState()
+	PHP
 	%Set16BitMode()
 	PHX
 	PHY
 	PHA
-	%Set8BitMode()
-	PHP
 endmacro
 
 macro PullState()
-	%Set8BitMode()
-	PLP
 	%Set16BitMode()
 	PLA
 	PLY
 	PLX
-	%Set8BitMode()
+	PLP
 endmacro
 
 macro JumpIfMSU(labelToJump)
@@ -96,6 +93,7 @@ freecode
 
 MSUHook:
 	%PushState()
+	%Set8BitMode()
 	TAX
 	%JumpIfNoMSU(.NoMSU) ; MSU not available, fallback
 	; Else, MSU was found, continue on
