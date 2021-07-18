@@ -38,18 +38,39 @@ macro Set16BitMode()
 	REP #$30
 endmacro
 
+macro Set8BitA()
+	SEP #$20
+endmacro
+
+macro Set16BitA()
+	REP #$20
+endmacro
+
+macro Set8BitXY()
+	SEP #$40
+endmacro
+
+macro Set16BitXY()
+	REP #$40
+endmacro
+
 macro PushState()
-	PHP
+	%Set16BitMode()
 	PHX
 	PHY
 	PHA
+	%Set8BitMode()
+	PHP
 endmacro
 
 macro PullState()
+	%Set8BitMode()
+	PLP
+	%Set16BitMode()
 	PLA
 	PLY
 	PLX
-	PLP
+	%Set8BitMode()
 endmacro
 
 macro JumpIfMSU(labelToJump)
@@ -74,9 +95,7 @@ autoclean JML MSUHook
 freecode
 
 MSUHook:
-	%Set16BitMode()
 	%PushState()
-	%Set8BitMode()
 	TAX
 	%JumpIfNoMSU(.NoMSU) ; MSU not available, fallback
 	; Else, MSU was found, continue on
@@ -94,28 +113,24 @@ MSUHook:
 	sta !MSU_VOLUME
 	sty !MSU_TRACK ; store calculated track index
 	stz !MSU_TRACK+1
-	lda #$01	; Set audio state to play, no repeat.
+	lda #$03	; Set audio state to play, no repeat.
 	sta !MSU_CONTROL
 	; The MSU1 will now start playing.
 	; Use lda #$03 to play a song repeatedly.
-	; TODO: not sure how to determine whether the requested track should loop or not
-	%Set16BitMode()
+	; TODO: not sure how to determine whether the requested track should loop or not. Loops always?
 	%PullState()
 	JML !OriginalMusicSubroutineReturn
 
 .StopMSUTrack:
 	lda #$00
 	sta !MSU_CONTROL
-	%Set16BitMode()
 	%PullState()
 	JML !OriginalMusicSubroutineReturn
 
 .NoMSU:
-	%Set16BitMode()
 	%PullState()
 	; run original overwritten code and return to subroutine
 	php
-	%Set8BitMode()
 	ldy $0f83
 	sta $0f84, Y
 	JML !OriginalMusicSubroutineAfterHook
