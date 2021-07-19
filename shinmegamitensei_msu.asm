@@ -22,7 +22,7 @@ lorom
 !OriginalMusicSubroutineAfterHook = $00c8083
 !OriginalMusicSubroutineReturn = $000c80a6
 
-!TrackIndexOffset = #$3C
+!TrackIndexOffset = #$3B
 
 ;; =====================================
 ;; Macros
