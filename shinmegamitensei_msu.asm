@@ -24,7 +24,7 @@ lorom
 
 !SomeMusicTrackRelatedMemoryAddress = $000f83 ; Not sure what this is used for exactly
 
-!TrackIndexOffset = #$3C
+!TrackIndexOffset = #$3B
 
 ;; =====================================
 ;; Macros
