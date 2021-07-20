@@ -24,7 +24,7 @@ lorom
 
 !SomeMusicTrackRelatedMemoryAddress = $000f83 ; Not sure what this is used for exactly
 
-!TrackIndexOffset = #$3B
+!TrackIndexOffset = #$38
 
 ;; =====================================
 ;; Macros
@@ -88,10 +88,14 @@ endmacro
 ;; Main MSU-1 hook
 ;; =====================================
 
-;org $00c8086
-;cmp !TrackIndexOffset ; TODO: hopefully changing this index is okay... ; Update: it was not very okay
-; TODO: enemy encounter, battle, and resuming map music after battle appear to work diffrently somehow
-; TODO: debug how those work in the original ROM some more.
+; TODO: can't really do only this if we want it to work when MSU isn't available...
+; TODO: need to restore this original code when MSU is not available
+org $00c8086
+cmp !TrackIndexOffset
+
+org $00c8084
+nop
+nop  ; remove bmi $808a in order to jump to our hook even when $FD and $FF are passed
 
 org !OriginalMusicSubroutineStart
 autoclean JML MSUHook
@@ -114,10 +118,13 @@ MSUHook:
 	SEC
 	SBC !TrackIndexOffset
 	;BCC .NoMSU ; Fallback to original music if A minus TrackIndexOffset <= 0 (sound effects use this)
-	TAY ; Save calculated index to Y
+	TAX ; Save calculated index to X
 	lda #$FF
 	sta !MSU_VOLUME
-	sty !MSU_TRACK ; store calculated track index
+	bank noassume
+	lda TrackMap, X
+	bank auto
+	sta !MSU_TRACK ; store calculated track index
 	stz !MSU_TRACK+1
 	lda #$03	; Set audio state to play, no repeat.
 	sta !MSU_CONTROL
@@ -135,6 +142,7 @@ MSUHook:
 	%PullState()
 	JML !OriginalMusicSubroutineReturn
 
+; TODO: update for new hook location
 .NoMSU:
 	%PullState()
 	; run original overwritten code and return to subroutine
@@ -146,3 +154,45 @@ MSUHook:
 	sta $0090
 	lda $0c814d, X
 	JML !OriginalMusicSubroutineAfterHook
+
+; Maps the calculated track index to the actual PCM track index
+;
+; Tracklisting:
+;	- 1. Enemy Appear (no intro)
+;	- 2. Enemy Appear (39 version)
+;	- 3. Enemy Appear (3A version)
+;	- 4. Enemy Appear (3B version)
+;	- 5. Battle
+;	- 6. Level Up
+;	- 7. Enemy Appear (3F version)
+;	- 8. Enemy Appear (42 version)
+;	- 9. Enemy Appear (43 version)
+;	- 10. Mansion of Heresey
+;	- 11. Law
+;	- 12. Chaos
+;	- 13. Neutral
+;	- 14. Ginza
+;	- 15. Cathedral
+;	- 16. Shibuya
+;	- 17. Palace of the Four Heavenly Kings
+;	- 18. Embassy
+;	- 19. Arcade Street
+;	- 20. Kichijoji
+;	- 21. Ruins
+;	- 22. Shop
+;	- 23. Boss Battle
+;	- 24. Dream
+;	- 25. Home
+;	- 26. Pascal
+;	- 27. Game Over
+; 	- 28. Unknown Song
+;	- 29. Terminal
+;	- 30. Epilogue
+;	- 31. Demo
+;	- 32. Title
+;
+TrackMap:
+db $01,$02,$03,$04,$05,$06,$06,$07,$07,$07
+db $08,$09,$0A,$0B,$0C,$0D,$0E,$0F,$10,$11
+db $12,$13,$14,$15,$16,$17,$18,$19,$1A,$1B
+db $1C,$1D,$1E,$0E,$0E,$0E,$0E,$1F,$20,$20
