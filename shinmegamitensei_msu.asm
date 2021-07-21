@@ -97,6 +97,9 @@ org $00c8084
 nop
 nop  ; remove bmi $808a in order to jump to our hook even when $FD and $FF are passed
 
+; TODO handle FF (stop music) and FD (fade music) in MSU-1 code
+; TODO: after returning to the overworld after battle, music doesn't resume, it stays on the Enemy Appear track
+
 org !OriginalMusicSubroutineStart
 autoclean JML MSUHook
 
@@ -110,6 +113,8 @@ MSUHook:
 	; Else, MSU was found, continue on
 	
 .MSUFound:
+	CPX #$FD
+	BEQ .FadeMusic
 	;TXA			; Grab the original passed in A value again
 	; TODO: not sure how to handle music stop when hooking at this alternate location
 	;CPX #$FF ; original code passes #$FF to stop the current track
@@ -131,10 +136,16 @@ MSUHook:
 	; The MSU1 will now start playing.
 	; Use lda #$03 to play a song repeatedly.
 	; TODO: not sure how to determine whether the requested track should loop or not. Loops always?
+.Return
 	%PullState()
 	; TODO: not sure what the value of Y should be...
 	ldy #$00
 	JML !OriginalMusicSubroutineReturn
+	
+.FadeMusic
+	lda #$7C
+	sta !MSU_VOLUME
+	JMP .Return
 
 .StopMSUTrack:
 	lda #$00
