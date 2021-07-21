@@ -21,8 +21,13 @@ lorom
 !OriginalMusicSubroutineStart = $000c80a7
 !OriginalMusicSubroutineAfterHook = $00c80b7
 !OriginalMusicSubroutineReturn = $000c809a
+;!OriginalResumeMusicAfterBattle = $000c806f
+!OriginalResumeMusicAfterBattleBra = $000c8078 ; Original code: BRA $808a
 
-!SomeMusicTrackRelatedMemoryAddress = $000f83 ; Not sure what this is used for exactly
+!SomeMusicTrackRelatedMemoryAddress = $0f83 ; Not sure what this is used for exactly
+!LastPlayedOffset = $0f83 ; Memory location of the offset used to calculate where to
+						  ; store the last played audio (3 = music)
+!LastPlayed = $0f84	; (indirect indexed) Stores the raw value of the last played song
 
 !TrackIndexOffset = #$38
 
@@ -88,17 +93,21 @@ endmacro
 ;; Main MSU-1 hook
 ;; =====================================
 
+; TODO: another thing to restore when MSU is not available
+org !OriginalResumeMusicAfterBattleBra
+bra MSUHookMusicComparison
+
 ; TODO: can't really do only this if we want it to work when MSU isn't available...
 ; TODO: need to restore this original code when MSU is not available
 org $00c8086
-cmp !TrackIndexOffset
+MSUHookMusicComparison:
+	cmp !TrackIndexOffset
 
 org $00c8084
 nop
 nop  ; remove bmi $808a in order to jump to our hook even when $FD and $FF are passed
 
 ; TODO handle FF (stop music) and FD (fade music) in MSU-1 code
-; TODO: after returning to the overworld after battle, music doesn't resume, it stays on the Enemy Appear track
 
 org !OriginalMusicSubroutineStart
 autoclean JML MSUHook
