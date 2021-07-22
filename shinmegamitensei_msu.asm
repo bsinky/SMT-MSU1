@@ -93,6 +93,8 @@ endmacro
 ;; Main MSU-1 hook
 ;; =====================================
 
+; TODO: I noticed the game over music isn't working, maybe that's a unique subroutine...?
+
 ; TODO: another thing to restore when MSU is not available
 org !OriginalResumeMusicAfterBattleBra
 bra MSUHookMusicComparison
@@ -122,6 +124,8 @@ MSUHook:
 	; Else, MSU was found, continue on
 	
 .MSUFound:
+	CPX #$FF
+	BEQ .StopMSUTrack
 	CPX #$FD
 	BEQ .FadeMusic
 	;TXA			; Grab the original passed in A value again
