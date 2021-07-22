@@ -93,8 +93,6 @@ endmacro
 ;; Main MSU-1 hook
 ;; =====================================
 
-; TODO: I noticed the game over music isn't working, maybe that's a unique subroutine...?
-
 ; TODO: another thing to restore when MSU is not available
 org !OriginalResumeMusicAfterBattleBra
 bra MSUHookMusicComparison
@@ -208,8 +206,8 @@ MSUHook:
 ;	- 24. Dream
 ;	- 25. Home
 ;	- 26. Pascal
-;	- 27. Game Over
-; 	- 28. Unknown Song
+; 	- 27. Unknown Song
+;	- 28. Game Over
 ;	- 29. Terminal
 ;	- 30. Epilogue
 ;	- 31. Demo
