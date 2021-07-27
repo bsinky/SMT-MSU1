@@ -141,7 +141,7 @@ MSUHook:
 	; as long as the number of extra tracks is a power of 2, we can
 	; use this algorithm to calculate modulo quickly: x & (y - 1)
 	; https://stackoverflow.com/a/8022107/4276832
-	LDA $2140 ; something with PPU? seems "random" ? seems to favor "2" a lot though, not sure if it's my code or the data at the address...
+	LDA $0451 ; this appears to be an incrementing counter, might be random enough since you'd have to hit this code on the example same frame of the sequence in order to predictably get the same song
 	AND !NumBattleThemes-1
 	BEQ .PlayOriginalBattleBGM
 .ChooseBattleTrack
