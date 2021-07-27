@@ -21,7 +21,6 @@ lorom
 !OriginalMusicSubroutineStart = $000c80a7
 !OriginalMusicSubroutineAfterHook = $00c80b7
 !OriginalMusicSubroutineReturn = $000c809a
-;!OriginalResumeMusicAfterBattle = $000c806f
 !OriginalResumeMusicAfterBattleBra = $000c8078 ; Original code: BRA $808a
 
 !SomeMusicTrackRelatedMemoryAddress = $0f83 ; Not sure what this is used for exactly
@@ -112,7 +111,7 @@ org $00c8084
 nop
 nop  ; remove bmi $808a in order to jump to our hook even when $FD and $FF are passed
 
-; TODO handle FF (stop music) and FD (fade music) in MSU-1 code
+; TODO handle FD (fade music) better in MSU-1 code
 
 org !OriginalMusicSubroutineStart
 autoclean JML MSUHook
@@ -131,24 +130,17 @@ MSUHook:
 	BEQ .StopMSUTrack
 	CPX #$FD
 	BEQ .FadeMusic
-	;TXA			; Grab the original passed in A value again
-	; TODO: not sure how to handle music stop when hooking at this alternate location
-	;CPX #$FF ; original code passes #$FF to stop the current track
-	;BCS .StopMSUTrack
-	TXA			; Grab the original passed in A value again
+	TXA	; Grab the original passed in A value again
 	SEC
 	SBC !TrackIndexOffset
-	;BCC .NoMSU ; Fallback to original music if A minus TrackIndexOffset <= 0 (sound effects use this)
 	TAX ; Save calculated index to X
 	if !EnableMutipleBattleThemes
 	CPX #$04 ; original Battle music calculated index is $04
 	BNE .SetVolumeAndPlayTrack
 	TXY ; Save calculated index to Y
-	TXA
 	; as long as the number of extra tracks is a power of 2, we can
 	; use this algorithm to calculate modulo quickly: x & (y - 1)
 	; https://stackoverflow.com/a/8022107/4276832
-	;TDC ; TODO: direct page isn't "random" enough for this, see if we can get HBlank somehow
 	LDA $2140 ; something with PPU? seems "random" ? seems to favor "2" a lot though, not sure if it's my code or the data at the address...
 	AND !NumBattleThemes-1
 	BEQ .PlayOriginalBattleBGM
