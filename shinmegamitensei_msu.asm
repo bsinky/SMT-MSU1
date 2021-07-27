@@ -31,6 +31,11 @@ lorom
 
 !TrackIndexOffset = #$38
 
+!EnableMutipleBattleThemes = !True ; Change this to !False for a more vanilla battle BGM experience
+!NumBattleThemes = #$04 ; Number of battle themes including the original theme. Should be set to a power of 2.
+!NumFinalTrack = #$20 ; Track index of the final regular track before the extra battle theme tracks 
+                      ; (you shouldn't need to update this)
+
 ;; =====================================
 ;; Macros
 ;; =====================================
@@ -135,6 +140,34 @@ MSUHook:
 	SBC !TrackIndexOffset
 	;BCC .NoMSU ; Fallback to original music if A minus TrackIndexOffset <= 0 (sound effects use this)
 	TAX ; Save calculated index to X
+	if !EnableMutipleBattleThemes
+	CPX #$04 ; original Battle music calculated index is $04
+	BNE .SetVolumeAndPlayTrack
+	TXY ; Save calculated index to Y
+	TXA
+	; as long as the number of extra tracks is a power of 2, we can
+	; use this algorithm to calculate modulo quickly: x & (y - 1)
+	; https://stackoverflow.com/a/8022107/4276832
+	;TDC ; TODO: direct page isn't "random" enough for this, see if we can get HBlank somehow
+	LDA $2140 ; something with PPU? seems "random" ? seems to favor "2" a lot though, not sure if it's my code or the data at the address...
+	AND !NumBattleThemes-1
+	BEQ .PlayOriginalBattleBGM
+.ChooseBattleTrack
+	; A should have a number between 1 and 3 in it now
+	; all we need to do is add that to the index of the final track
+	CLC
+	ADC !NumFinalTrack
+	STA !MSU_TRACK
+	stz !MSU_TRACK+1
+	lda #$FF
+	sta !MSU_VOLUME
+	bra .SetMSUStateToPlay
+.PlayOriginalBattleBGM
+	; it was zero, so we're going to play the original track
+	TXA ; bring back original calculated index from X
+	BRA .SetVolumeAndPlayTrack
+	endif
+.SetVolumeAndPlayTrack
 	lda #$FF
 	sta !MSU_VOLUME
 	bank noassume
@@ -142,6 +175,7 @@ MSUHook:
 	bank auto
 	sta !MSU_TRACK ; store calculated track index
 	stz !MSU_TRACK+1
+.SetMSUStateToPlay
 	lda #$03	; Set audio state to play, no repeat.
 	sta !MSU_CONTROL
 	; The MSU1 will now start playing.
