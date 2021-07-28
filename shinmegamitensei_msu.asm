@@ -32,7 +32,7 @@ lorom
 
 !EnableMutipleBattleThemes = !True ; Change this to !False for a more vanilla battle BGM experience
 !NumBattleThemes = #$04 ; Number of battle themes including the original theme. Should be set to a power of 2.
-!NumFinalTrack = #$20 ; Track index of the final regular track before the extra battle theme tracks 
+!NumFinalTrack = #$20 ; Track index of the final regular track before the extra battle theme tracks
                       ; (you shouldn't need to update this)
 
 ;; =====================================
@@ -141,7 +141,9 @@ MSUHook:
 	; as long as the number of extra tracks is a power of 2, we can
 	; use this algorithm to calculate modulo quickly: x & (y - 1)
 	; https://stackoverflow.com/a/8022107/4276832
-	LDA $0451 ; this appears to be an incrementing counter, might be random enough since you'd have to hit this code on the example same frame of the sequence in order to predictably get the same song
+	LDA $0451 ; this appears to be an incrementing counter, might be random enough since you'd
+			  ; have to hit this code on the exact same frame of the sequence in order to predictably
+			  ; get the same song
 	AND !NumBattleThemes-1
 	BEQ .PlayOriginalBattleBGM
 .ChooseBattleTrack
