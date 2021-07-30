@@ -27,6 +27,8 @@ lorom
 !LastPlayedOffset = $0f83 ; Memory location of the offset used to calculate where to
 						  ; store the last played audio (3 = music)
 !LastPlayed = $0f84	; (indirect indexed) Stores the raw value of the last played song
+!FreeRAM1 = $0452 ; Doesn't appear to be used once past the initialization code
+!FadeVolume = !FreeRAM1
 
 !TrackIndexOffset = #$38
 
@@ -97,6 +99,9 @@ endmacro
 ;; Main MSU-1 hook
 ;; =====================================
 
+org $008241 ; Hook onto game loop for fadeout logic
+autoclean JML CheckFade
+
 ; TODO: another thing to restore when MSU is not available
 org !OriginalResumeMusicAfterBattleBra
 bra MSUHookMusicComparison
@@ -164,6 +169,7 @@ MSUHook:
 .SetVolumeAndPlayTrack
 	lda #$FF
 	sta !MSU_VOLUME
+	stz !FadeVolume ; Stop fading music if it's in the middle of a fade
 	bank noassume
 	lda TrackMap, X
 	bank auto
@@ -182,8 +188,8 @@ MSUHook:
 	JML !OriginalMusicSubroutineReturn
 	
 .FadeMusic
-	lda #$7C
-	sta !MSU_VOLUME
+	lda #$FF
+	sta !FadeVolume
 	JMP .Return
 
 .StopMSUTrack:
@@ -204,6 +210,29 @@ MSUHook:
 	sta $0090
 	lda $0c814d, X
 	JML !OriginalMusicSubroutineAfterHook
+
+CheckFade:
+	php
+	%Set8BitA()
+	%JumpIfNoMSU(.CheckFadeReturn)
+	lda !FadeVolume ; Get the last recorded volume during fade
+	CMP #$00
+	BEQ .CheckFadeReturn ; Volume already faded to 0, skip
+	rep 2 : DEC A ; decrement volume 2 times (1 per call wasn't noticeable enough)
+	STA !MSU_VOLUME
+	STA !FadeVolume
+.CheckFadeReturn:
+	plp
+	; restore original subroutine code
+	lda $0f2d
+	and $0f2f
+	eor $0f2d
+	sta $0f2b
+	lda $0f33
+	and $0f35
+	eor $0f33
+	sta $0f31
+	JML $00008259 ; jump to original subroutine return
 
 ; Maps the calculated track index to the actual PCM track index
 ;
