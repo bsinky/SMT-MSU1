@@ -34,7 +34,7 @@ lorom
 
 !EnableMutipleBattleThemes = !True ; Change this to !False for a more vanilla battle BGM experience
 !NumBattleThemes = #$04 ; Number of battle themes including the original theme. Should be set to a power of 2.
-!NumFinalTrack = #$20 ; Track index of the final regular track before the extra battle theme tracks
+!NumFinalTrack = #$21 ; Track index of the final regular track before the extra battle theme tracks
                       ; (you shouldn't need to update this)
 
 ;; =====================================
@@ -269,9 +269,13 @@ CheckFade:
 ;	- 30. Epilogue
 ;	- 31. Demo
 ;	- 32. Title
+;	- 33. Fusion
 ;
+; 33. Fusion is out of place because I originally missed it, and by the time I found
+; the value for it I had already plotted out this tracklist, and it was easy to just
+; put it on the end
 TrackMap:
-db $01,$02,$03,$04,$05,$06,$06,$07,$07,$07
+db $01,$02,$03,$04,$05,$06,$06,$07,$21,$07
 db $08,$09,$0A,$0B,$0C,$0D,$0E,$0F,$10,$11
 db $12,$13,$14,$15,$16,$17,$18,$19,$1A,$1B
 db $1C,$1D,$1E,$0E,$0E,$0E,$0E,$1F,$20,$20
