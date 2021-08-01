@@ -34,7 +34,7 @@ lorom
 
 !EnableMutipleBattleThemes = !True ; Change this to !False for a more vanilla battle BGM experience
 !NumBattleThemes = #$04 ; Number of battle themes including the original theme. Should be set to a power of 2.
-!NumFinalTrack = #$21 ; Track index of the final regular track before the extra battle theme tracks
+!NumFinalTrack = #$22 ; Track index of the final regular track before the extra battle theme tracks
                       ; (you shouldn't need to update this)
 
 ;; =====================================
@@ -175,12 +175,14 @@ MSUHook:
 	bank auto
 	sta !MSU_TRACK ; store calculated track index
 	stz !MSU_TRACK+1
-.SetMSUStateToPlay
-	lda #$03	; Set audio state to play, no repeat.
+	cmp #$22 ; Ending track
+	bne .SetMSUStateToPlay
+	lda #$01	; Set audio state to play, no repeat
 	sta !MSU_CONTROL
-	; The MSU1 will now start playing.
-	; Use lda #$03 to play a song repeatedly.
-	; TODO: not sure how to determine whether the requested track should loop or not. Loops always?
+	bra .Return
+.SetMSUStateToPlay
+	lda #$03	; Set audio state to play, with repeat.
+	sta !MSU_CONTROL
 .Return
 	%PullState()
 	; TODO: not sure what the value of Y should be...
@@ -270,6 +272,7 @@ CheckFade:
 ;	- 31. Demo
 ;	- 32. Title
 ;	- 33. Fusion
+;	- 34. Ending
 ;
 ; 33. Fusion is out of place because I originally missed it, and by the time I found
 ; the value for it I had already plotted out this tracklist, and it was easy to just
@@ -278,4 +281,4 @@ TrackMap:
 db $01,$02,$03,$04,$05,$06,$06,$07,$21,$07
 db $08,$09,$0A,$0B,$0C,$0D,$0E,$0F,$10,$11
 db $12,$13,$14,$15,$16,$17,$18,$19,$1A,$1B
-db $1C,$1D,$1E,$0E,$0E,$0E,$0E,$1F,$20,$20
+db $1C,$1D,$1E,$0E,$0E,$0E,$0E,$1F,$20,$22
