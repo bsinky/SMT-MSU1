@@ -22,6 +22,7 @@ lorom
 !OriginalMusicSubroutineAfterHook = $00c80b7
 !OriginalMusicSubroutineReturn = $000c809a
 !OriginalResumeMusicAfterBattleBra = $000c8078 ; Original code: BRA $808a
+!OriginalSoundEffectSubroutineAfterCMP = $000c808a;
 
 !SomeMusicTrackRelatedMemoryAddress = $0f83 ; Not sure what this is used for exactly
 !LastPlayedOffset = $0f83 ; Memory location of the offset used to calculate where to
@@ -84,13 +85,13 @@ macro PullState()
 endmacro
 
 macro JumpIfMSU(labelToJump)
-	LDA $2002
+	LDA !MSU_ID
 	CMP #$53
 	BEQ <labelToJump>
 endmacro
 
 macro JumpIfNoMSU(labelToJump)
-	LDA $2002
+	LDA !MSU_ID
 	CMP #$53
 	BNE <labelToJump>
 endmacro
@@ -127,7 +128,7 @@ MSUHook:
 	%PushState()
 	%Set8BitMode()
 	TAX
-	%JumpIfNoMSU(.NoMSU) ; MSU not available, fallback
+	%JumpIfNoMSU(NoMSU) ; MSU not available, fallback
 	; Else, MSU was found, continue on
 	
 .MSUFound:
@@ -160,7 +161,7 @@ MSUHook:
 	stz !MSU_TRACK+1
 	lda #$FF
 	sta !MSU_VOLUME
-	bra .SetMSUStateToPlay
+	bra .CheckIfTrackIsFound
 .PlayOriginalBattleBGM
 	; it was zero, so we're going to play the original track
 	TXA ; bring back original calculated index from X
@@ -175,6 +176,14 @@ MSUHook:
 	bank auto
 	sta !MSU_TRACK ; store calculated track index
 	stz !MSU_TRACK+1
+.CheckIfTrackIsFound
+	.StatusLoop
+		LDA !MSU_STATUS
+		BIT #%01000000 ; check Audio Busy bit
+		BNE .StatusLoop ; wait for audio busy flag to change
+	BIT #%00001000 ; check Track Missing bit
+	BNE NoMSU ; track wasn't found, fallback to SPC audio
+; else, track was found
 	cmp #$22 ; Ending track
 	bne .SetMSUStateToPlay
 	lda #$01	; Set audio state to play, no repeat
@@ -200,10 +209,13 @@ MSUHook:
 	%PullState()
 	JML !OriginalMusicSubroutineReturn
 
-; TODO: update for new hook location
-.NoMSU:
+NoMSU:
 	%PullState()
 	; run original overwritten code and return to subroutine
+	cmp #$44 ; restore the original offset comparison
+	bcs .NoMSUMusicSubroutine
+	JML !OriginalSoundEffectSubroutineAfterCMP
+.NoMSUMusicSubroutine
 	sec
 	sbc #$44
 	asl
