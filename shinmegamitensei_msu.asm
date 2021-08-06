@@ -1,5 +1,5 @@
 ;; ======================================
-;; Shin Megami Tensei MSU1 ASM
+;; Shin Megami Tensei MSU-1 ASM
 ;; ======================================
 @asar 1.81
 math pri on
@@ -103,12 +103,9 @@ endmacro
 org $008241 ; Hook onto game loop for fadeout logic
 autoclean JML CheckFade
 
-; TODO: another thing to restore when MSU is not available
 org !OriginalResumeMusicAfterBattleBra
 bra MSUHookMusicComparison
 
-; TODO: can't really do only this if we want it to work when MSU isn't available...
-; TODO: need to restore this original code when MSU is not available
 org $00c8086
 MSUHookMusicComparison:
 	cmp !TrackIndexOffset
@@ -116,8 +113,6 @@ MSUHookMusicComparison:
 org $00c8084
 nop
 nop  ; remove bmi $808a in order to jump to our hook even when $FD and $FF are passed
-
-; TODO handle FD (fade music) better in MSU-1 code
 
 org !OriginalMusicSubroutineStart
 autoclean JML MSUHook
@@ -212,8 +207,11 @@ MSUHook:
 NoMSU:
 	%PullState()
 	; run original overwritten code and return to subroutine
+	tay ; This followed by BMI handles FF and FD cases in the original code I think
+	BMI .SoundEffectReturn
 	cmp #$44 ; restore the original offset comparison
 	bcs .NoMSUMusicSubroutine
+.SoundEffectReturn
 	JML !OriginalSoundEffectSubroutineAfterCMP
 .NoMSUMusicSubroutine
 	sec
