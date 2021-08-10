@@ -93,7 +93,9 @@ endmacro
 macro JumpIfNoMSU(labelToJump)
 	LDA !MSU_ID
 	CMP #$53
-	BNE <labelToJump>
+	BEQ ?Return
+	JMP <labelToJump>
+?Return
 endmacro
 
 ;; =====================================
@@ -106,13 +108,13 @@ autoclean JML CheckFade
 org !OriginalResumeMusicAfterBattleBra
 bra MSUHookMusicComparison
 
-org $00c8086
-MSUHookMusicComparison:
-	cmp !TrackIndexOffset
-
 org $00c8084
 nop
 nop  ; remove bmi $808a in order to jump to our hook even when $FD and $FF are passed
+
+org $00c8086
+MSUHookMusicComparison:
+	cmp #$0D ; Terminal transmit sound effect: does a special thing where it stops the current music track so we need to handle that for MSU-1
 
 org !OriginalMusicSubroutineStart
 autoclean JML MSUHook
@@ -127,6 +129,15 @@ MSUHook:
 	; Else, MSU was found, continue on
 	
 .MSUFound:
+	CPX !TrackIndexOffset
+	BCS .ContinueMusicChecks ; Greater than or equal to music track index, continue on with MSU stuff
+	CPX #$0D
+	BNE .NormalSoundEffect
+	stz !MSU_CONTROL ; if it's the terminal sound effect, stop the MSU audio
+	; otherwise, it must be a sound effect other than the terminal sound effect - jump back to normal code
+.NormalSoundEffect
+	JMP NoMSU
+.ContinueMusicChecks
 	CPX #$FF
 	BEQ .StopMSUTrack
 	CPX #$FD
@@ -199,8 +210,7 @@ MSUHook:
 	JMP .Return
 
 .StopMSUTrack:
-	lda #$00
-	sta !MSU_CONTROL
+	stz !MSU_CONTROL
 	%PullState()
 	JML !OriginalMusicSubroutineReturn
 
