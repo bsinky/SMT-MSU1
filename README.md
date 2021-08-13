@@ -1,7 +1,7 @@
 Shin Megami Tensei MSU-1 patch
 ==============================
 
-This is an assembly patch for Shin Megami Tensei on the Super Famicom to enable support for the MSU-1 hardware.
+This is an assembly patch for Shin Megami Tensei on the Super Famicom to enable MSU-1 audio support.
 
 Building
 --------
