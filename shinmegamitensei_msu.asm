@@ -163,10 +163,9 @@ MSUHook:
 	; all we need to do is add that to the index of the final track
 	CLC
 	ADC !NumFinalTrack
+	STZ !MSU_VOLUME
 	STA !MSU_TRACK
 	stz !MSU_TRACK+1
-	lda #$FF
-	sta !MSU_VOLUME
 	bra .CheckIfTrackIsFound
 .PlayOriginalBattleBGM
 	; it was zero, so we're going to play the original track
@@ -174,8 +173,7 @@ MSUHook:
 	BRA .SetVolumeAndPlayTrack
 	endif
 .SetVolumeAndPlayTrack
-	lda #$FF
-	sta !MSU_VOLUME
+	stz !MSU_VOLUME
 	stz !FadeVolume ; Stop fading music if it's in the middle of a fade
 	bank noassume
 	lda TrackMap, X
@@ -190,7 +188,7 @@ MSUHook:
 	BIT #%00001000 ; check Track Missing bit
 	BNE NoMSU ; track wasn't found, fallback to SPC audio
 ; else, track was found
-	cmp #$22 ; Ending track
+	cpx #$22 ; Ending track
 	bne .SetMSUStateToPlay
 	lda #$01	; Set audio state to play, no repeat
 	sta !MSU_CONTROL
@@ -199,6 +197,8 @@ MSUHook:
 	lda #$03	; Set audio state to play, with repeat.
 	sta !MSU_CONTROL
 .Return
+	lda #$FF
+	sta !MSU_VOLUME
 	%PullState()
 	; TODO: not sure what the value of Y should be...
 	ldy #$00
