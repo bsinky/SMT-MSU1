@@ -78,4 +78,4 @@ If multiple battle tracks are enabled, the extra tracks go at the end. Ex.: if u
 Known Issues
 ------------
 
-If running on an emulator that supports MSU-1 but there's a PCM track missing, fallback to SPC audio is working but the SPC audio will not stop when the next MSU-1 track begins playing, causing the MSU-1 and SPC music to overlap.
+If running on an emulator that supports MSU-1 but there's a PCM track missing, fallback to SPC audio is working but the SPC audio will sometimes not stop when the next MSU-1 track begins playing, causing the MSU-1 and SPC music to overlap.

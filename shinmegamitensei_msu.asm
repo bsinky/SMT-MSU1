@@ -199,17 +199,22 @@ MSUHook:
 .Return
 	lda #$FF
 	sta !MSU_VOLUME
+	sta $2140 ; 2140 = APUIO0, #$FF will stop SPC music
 	%PullState()
 	; TODO: not sure what the value of Y should be...
 	ldy #$00
 	JML !OriginalMusicSubroutineReturn
 	
 .FadeMusic
+	LDA !MSU_STATUS
+	BIT #%00001000 ; check Track Missing bit
+	BNE .StopMSUTrack ; if using SPC audio fallback, X contains #$FD now so we can just write that to APUIO0 and the SPC fadeout will trigger
 	lda #$FF
 	sta !FadeVolume
 	JMP .Return
 
 .StopMSUTrack:
+	stx $2140 ; 2140 = APUIO0, #$FF will stop SPC music
 	stz !MSU_CONTROL
 	%PullState()
 	JML !OriginalMusicSubroutineReturn
