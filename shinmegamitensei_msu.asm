@@ -149,7 +149,6 @@ MSUHook:
 	if !EnableMutipleBattleThemes
 	CPX #$04 ; original Battle music calculated index is $04
 	BNE .SetVolumeAndPlayTrack
-	TXY ; Save calculated index to Y
 	; as long as the number of extra tracks is a power of 2, we can
 	; use this algorithm to calculate modulo quickly: x & (y - 1)
 	; https://stackoverflow.com/a/8022107/4276832
@@ -178,6 +177,7 @@ MSUHook:
 	bank noassume
 	lda TrackMap, X
 	bank auto
+	tay ; save mapped track index to Y
 	sta !MSU_TRACK ; store calculated track index
 	stz !MSU_TRACK+1
 .CheckIfTrackIsFound
@@ -188,7 +188,7 @@ MSUHook:
 	BIT #%00001000 ; check Track Missing bit
 	BNE NoMSU ; track wasn't found, fallback to SPC audio
 ; else, track was found
-	cpx #$22 ; Ending track
+	cpy #$22 ; Y still contains the mapped track index, check if it's the Ending track
 	bne .SetMSUStateToPlay
 	lda #$01	; Set audio state to play, no repeat
 	sta !MSU_CONTROL
