@@ -1,0 +1,21 @@
+# Audio files
+*.pcm
+*.wav
+*.flac
+
+# bsnes-plus debug files
+*.sym
+*.bst
+*.bp
+*.log
+
+# emulator files
+*.srm
+*.msu
+*.ips
+*.bps
+*.cht
+
+# ROM files
+*.sfc
+*.smc
