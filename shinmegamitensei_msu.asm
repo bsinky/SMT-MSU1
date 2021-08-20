@@ -186,23 +186,25 @@ MSUHook:
 		BIT #%01000000 ; check Audio Busy bit
 		BNE .StatusLoop ; wait for audio busy flag to change
 	BIT #%00001000 ; check Track Missing bit
-	BNE NoMSU ; track wasn't found, fallback to SPC audio
+	BEQ .TrackWasFound
+	stz !MSU_CONTROL ; stop MSU audio playback
+	BRA NoMSU ; fall back to SPC audio
 ; else, track was found
+.TrackWasFound
 	cpy #$22 ; Y still contains the mapped track index, check if it's the Ending track
 	bne .SetMSUStateToPlay
-	lda #$01	; Set audio state to play, no repeat
+	lda #$01 ; Set audio state to play, no repeat
 	sta !MSU_CONTROL
 	bra .Return
 .SetMSUStateToPlay
-	lda #$03	; Set audio state to play, with repeat.
+	lda #$03 ; Set audio state to play, with repeat.
 	sta !MSU_CONTROL
 .Return
 	lda #$FF
 	sta !MSU_VOLUME
-	sta $2140 ; 2140 = APUIO0, #$FF will stop SPC music
+	sta $2140 ; APUIO0, #$FF will stop SPC music
 	%PullState()
-	; TODO: not sure what the value of Y should be...
-	ldy #$00
+	ldy $0f83 ; copied from original code
 	JML !OriginalMusicSubroutineReturn
 	
 .FadeMusic
